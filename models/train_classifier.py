@@ -21,16 +21,16 @@ from sqlalchemy import create_engine
 def load_data(database_filepath):
     """
     INPUT:
-    database_filepath - 
-    
+    database_filepath -
+
     OUTPUT:
-    X - messages (input variable) 
+    X - messages (input variable)
     y - categories of the messages (output variable)
     category_names - category name for y
     """
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql_table('DisasterResponse_table', engine)
-    
+
     X = df['message']
     y = df.iloc[:,4:]
     category_names = y.columns
@@ -40,7 +40,7 @@ def tokenize(text):
     """
     INPUT:
     text - raw text
-    
+
     OUTPUT:
     clean_tokens - tokenized messages
     """
@@ -48,23 +48,23 @@ def tokenize(text):
     detected_urls = re.findall(url_regex, text)
     for url in detected_urls:
         text = text.replace(url, "urlplaceholder")
-    
+
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
-    
+
     clean_tokens = []
     for tok in tokens:
         clean_tok = lemmatizer.lemmatize(tok).lower().strip()
         clean_tokens.append(clean_tok)
-        
+
     return clean_tokens
 
 
 def build_model(clf = AdaBoostClassifier()):
     """
     INPUT:
-    clf - classifier model (If none is inputted, the function will use default 'AdaBoostClassifier' model) 
-    
+    clf - classifier model (If none is inputted, the function will use default 'AdaBoostClassifier' model)
+
     OUTPUT:
     cv = ML model pipeline after performing grid search
     """
@@ -77,21 +77,21 @@ def build_model(clf = AdaBoostClassifier()):
         ])),
         ('clf', MultiOutputClassifier(clf))
     ])
-    
+
     parameters = {
         'clf__estimator__learning_rate':[0.5, 1.0],
         'clf__estimator__n_estimators':[10,20]
-    
+
     }
-        
-    cv = GridSearchCV(pipeline, param_grid=parameters, cv=5, n_jobs=-1, verbose=3) 
-    
+
+    cv = GridSearchCV(pipeline, param_grid=parameters, cv=5, n_jobs=-1, verbose=3)
+
     return cv
-    
+
 def evaluate_model(model, X_test, Y_test, category_names):
     """
     INPUT:
-    model - ML model
+    model - machine learning model
     X_test - test messages
     y_test - categories for test messages
     category_names - category name for y
@@ -101,14 +101,14 @@ def evaluate_model(model, X_test, Y_test, category_names):
     """
     Y_pred_test = model.predict(X_test)
     print(classification_report(Y_test.values, Y_pred_test, target_names=category_names))
-    
+
 
 def save_model(model, model_filepath):
     """
     INPUT:
     model - ML model
     model_filepath - location to save the model
-    
+
     OUTPUT:
     none
     """
@@ -122,13 +122,13 @@ def main():
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-        
+
         print('Building model...')
         model = build_model()
-        
+
         print('Training model...')
         model.fit(X_train, Y_train)
-        
+
         print('Evaluating model...')
         evaluate_model(model, X_test, Y_test, category_names)
 
